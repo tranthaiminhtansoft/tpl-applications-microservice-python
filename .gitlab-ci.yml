@@ -1,0 +1,59 @@
+include:
+  - project: devops-adoption-framework/pipeline-library/gitlab-library
+    ref: main
+    file:
+      - /workflows/ci/ci-python-docker.yml
+
+default:
+  tags:
+    - docker
+
+# To add more stage to pipeline
+# stages:
+#   - test
+#   - security checks
+#   - package and publish
+#   - sca
+#   - additional stage
+
+variables:
+  APP_NAME: "python-microservice-helloworld"                    # Application name - Also used as image name
+  DOCKER_BUILD_CONTEXT: "${CI_PROJECT_DIR}"                     # Where to run `docker build` command
+  DOCKERFILE_PATH: "${CI_PROJECT_DIR}/Dockerfile"               # Path to the Dockerfile
+  PY_TEST_DIR: "tests"                                          # Location of Dir to test
+
+  SONAR_SCAN_JOB: "true"                                        # Remove to disable `sonarqube` scan
+  SONAR_SCANNER_IMAGE: "registry.hub.docker.com/sonarsource/sonar-scanner-cli:latest"   # Sonar image to run scan
+
+  DOCKER_REGISTRY_TYPE: "ECR"                                   # Specify the ECR registry if desired.
+  DOCKER_REGISTRY_HOST: "public.ecr.aws/w1f0j6e3/demo"          # Image Registry URL
+
+  SYFT_SCANNER_IMAGE: "registry.hub.docker.com/anchore/syft:v1.15.0-debug"      # Syft image to generate SBOM
+  GRYPE_SCANNER_IMAGE: "registry.hub.docker.com/anchore/grype:v0.83.0-debug"    # Grype image to run SBOM scan
+  PYTHON_RUNNER_IMAGE: "gitlab.tma.com.vn:5050/devops-adoption-framework/application-templates/microservice-python/python-runner:3.9-alpine3.20"    # Python image to run tests
+
+  # APP_VERSION: 1.0.0                                          # Automatically generated with gitversion if not specified
+
+  # LINT_CONFIGURATION: "./dockerlint_config_file"              # Path to the configuration file of dockerfile lint
+  # LINT_OPTIONS: "-V"                                          # Command line options of dockerfile lint
+
+  # DOCKER_CACHE_ENABLED: "true"                                # Enable caching images for later builds
+  # DOCKER_REGISTRY_INSECURE: "true"                            # Skip TLS verification when pushing image
+  # DOCKER_REGISTRY_PREFIX: "my-application/"                   # The ending "/" is required if specified
+  # DOCKER_BUILD_ARGS: "--build-arg ENVIRONMENT=TEST"           #Docker build arguments
+
+  # OVERRIDE_TEST: "true"                                       # Skip all jobs in test stage if 'true'
+  # COVERAGE_THRESHOLD: 90                                      # Coverage percentage to check on merge request
+  # UNIT_TEST_OPTS: "--maxfail=2"                               # Command line options of pytest module
+
+  # SONAR_OPTS: "-X"                                            # Command line options of sonar-scanner
+
+  # KANIKO_RUNNER_IMAGE: "gcr.io/kaniko-project/executor:v1.14.0-debug"         # Kaniko image to run packaging container image
+  # KANIKO_EXTRA_ARGS: "--no-push"                              # Command line options of Kaniko
+
+# To add more tests to pipeline
+# integration_test:
+#   stage: test
+#   image: RUNNER_IMAGE
+#   script:
+#     - echo Running Integration test

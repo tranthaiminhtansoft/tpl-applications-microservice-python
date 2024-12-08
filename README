@@ -1,0 +1,105 @@
+# Description
+DevOps Adoption Framework - Application - Templates for microservice python
+
+## gitignore and dockerignore
+### 1. gitignore
+- We referred to the `.gitignore` file for a Python repository provided by `GitHub` at the following [`link`](https://github.com/github/gitignore/blob/main/Python.gitignore).
+
+### 2. dockerignore
+- We referred to this repository at the following [`link`](https://github.com/abetlen/llama-cpp-python/blob/main/.dockerignore).
+- We added some new files and removed duplicate files in the `.gitignore` file.
+
+## Running Locally
+
+### 1. Install dependencies:
+    ```bash
+    python3 -m pip install -r requirements.txt
+    ```
+
+### 2. Run the app:
+    ```bash
+    python3 app/main.py
+    ```
+
+### 3. Access the service at `http://127.0.0.1:5000`.
+
+## Running with Docker
+
+### 1. Build the Docker image:
+    ```bash
+    docker build -t hello-world-service .
+    ```
+
+### 2. Run the Docker container:
+    ```bash
+    docker run -p 5000:5000 hello-world-service
+    ```
+
+### 3. Access the service at `http://localhost:5000`.
+
+## Running in Gitlab CI pipeline
+### 1. Requirements:
+- The `PYTHON_RUNNER_IMAGE` must include `pylint`, `pytest`, and `pytest-cov` to run jobs in the pipeline. If these are missing, the pipeline will fail.
+
+### 2. How to use the pipeline
+- The application uses a pipeline template defined in `devops-adoption-framework/pipeline-library/gitlab-library`.
+- You can override the variables, rules, and scripts of the existing jobs, or add new stages and jobs to the pipeline as needed.
+
+### 3. About the pipeline flow
+- The default pipeline will include the following stages:
+    + `test`
+    + `security checks`
+    + `package and publish`
+    + `sca`
+- The jobs in the pipeline will run under specific conditions.
+
+#### 3.1 All branches
+- The `test` stage, with the 3 jobs below, will run by default when the pipeline is triggered by all branches.
+    + `Dockerfile lint` - `hadolint`
+    + `Code lint` - `pylint`
+    + `Unit test` - `pytest`
+
+#### 3.2 Merge request
+- The `test` stage, with the jobs `Coverage Test` and `Sonar Scan`, will run when a merge request is opened:
+    + `Coverage Test` - `pytest-cov`
+        - Displays the result in the pipeline terminal and reports areas of the code lacking coverage.
+        - Fails the pipeline if it does not meet the `COVERAGE_THRESHOLD`.
+    + `Sonar Scan` - `sonar-scanner`
+        - Creates a merge request decoration in SonarQube.
+
+#### 3.3 Default Branch / Release Branch / Tag
+- The `package and publish` stage and `sca` stage will run when any of the following three conditions are met:
+    + `Package and publish container image`:
+        - Use a defined version or create a version with `gitversion`.
+        - Create a container image and push it to the registry using `kaniko`.
+    + `Software Composition Analysis`:
+        - Use `syft` to scan and generate an SBOM (Software Bill of Materials) for the container image.
+        - Scan the generated SBOM with `grype`, then report the results in the terminal and save them as an artifact.
+
+### 4. Pipeline variables
+- You can define variables to run the pipeline in the [.gitlab-ci.yml](.gitlab-ci.yml)
+- You can also define variables containing sensitive values by using:
+    + To add in `Settings` -> `CI/CD Variables` + `Masked` enabled
+        ```
+            DOCKER_REGISTRY_USER: "registry_user"
+            DOCKER_REGISTRY_PASSWORD: "registry_password"
+        ```
+        ```
+            SONAR_HOST_URL: "https://sonarqube.tma.com.vn/"
+            SONAR_TOKEN: "hello-world sonarqube token"
+        ```
+
+### 5. Versioning scheme from gitversion
+```
+    ### Current tag: 0.0.0
+
+    Feature branch: {0.0.1 (patch + 1)}-branch-name.${commit_index_from_tag}
+    e.g: 0.0.1-feature-1.1
+
+    Default branch: {0.0.1 (patch + 1)}-${commit_index_from_tag}
+    e.g: 0.0.1-9
+
+    Tag: Tag
+    e.g: 0.0.1
+```
+
